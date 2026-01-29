@@ -23,14 +23,17 @@ interface UrlRow {
 
 interface UrlListClientProps {
   projectId: string;
+  projectName: string;
   initialUrls: UrlRow[];
 }
 
-export function UrlListClient({ projectId, initialUrls }: UrlListClientProps) {
+export function UrlListClient({ projectId, projectName, initialUrls }: UrlListClientProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [checkingId, setCheckingId] = useState<string | null>(null);
+  const [selectedUrls, setSelectedUrls] = useState<Set<string>>(new Set());
+  const [bulkChecking, setBulkChecking] = useState(false);
   const router = useRouter();
   const { showToast } = useToast();
 
@@ -86,6 +89,58 @@ export function UrlListClient({ projectId, initialUrls }: UrlListClientProps) {
     }
   };
 
+  const handleToggleUrl = (urlId: string) => {
+    setSelectedUrls((prev) => {
+      const next = new Set(prev);
+      if (next.has(urlId)) {
+        next.delete(urlId);
+      } else {
+        next.add(urlId);
+      }
+      return next;
+    });
+  };
+
+  const handleToggleAll = () => {
+    if (selectedUrls.size === filteredUrls.length) {
+      setSelectedUrls(new Set());
+    } else {
+      setSelectedUrls(new Set(filteredUrls.map((u) => u.id)));
+    }
+  };
+
+  const handleBulkCheck = async () => {
+    if (selectedUrls.size === 0) {
+      showToast("チェックするURLを選択してください", "info");
+      return;
+    }
+
+    setBulkChecking(true);
+    const urlIds = Array.from(selectedUrls);
+    const results = await Promise.allSettled(
+      urlIds.map((urlId) =>
+        fetch(`/api/projects/${projectId}/urls/${urlId}/check`, {
+          method: "POST",
+        })
+      )
+    );
+
+    const succeeded = results.filter((r) => r.status === "fulfilled").length;
+    const failed = results.length - succeeded;
+
+    if (failed === 0) {
+      showToast(`${succeeded}件のチェックを開始しました`, "success");
+    } else if (succeeded === 0) {
+      showToast(`すべてのチェックが失敗しました (${failed}件)`, "error");
+    } else {
+      showToast(`${succeeded}件成功、${failed}件失敗`, "info");
+    }
+
+    setSelectedUrls(new Set());
+    setBulkChecking(false);
+    router.refresh();
+  };
+
   const filteredUrls = searchQuery
     ? initialUrls.filter(
         (row) =>
@@ -95,12 +150,15 @@ export function UrlListClient({ projectId, initialUrls }: UrlListClientProps) {
       )
     : initialUrls;
 
+  const isAllSelected = filteredUrls.length > 0 && selectedUrls.size === filteredUrls.length;
+  const isIndeterminate = selectedUrls.size > 0 && selectedUrls.size < filteredUrls.length;
+
   return (
     <div>
       <header className="header">
         <div>
           <div style={{ color: "var(--muted)", fontSize: 12 }}>プロジェクト</div>
-          <h1 style={{ fontSize: 18, fontWeight: 600, margin: 0 }}>Project {projectId} / URL一覧</h1>
+          <h1 style={{ fontSize: 18, fontWeight: 600, margin: 0 }}>{projectName} / URL一覧</h1>
         </div>
         <div className="stack">
           <button className="button ghost" aria-label="フィルタを開く">
@@ -108,12 +166,15 @@ export function UrlListClient({ projectId, initialUrls }: UrlListClientProps) {
             フィルタ
           </button>
           <button
-            className="button ghost"
-            disabled={checkingId !== null}
+            className="button primary"
+            onClick={handleBulkCheck}
+            disabled={selectedUrls.size === 0 || bulkChecking}
             aria-label="選択したURLを手動チェック"
           >
-            <PlayCircle size={16} />
-            選択を手動チェック
+            <ButtonSpinner loading={bulkChecking}>
+              <PlayCircle size={16} />
+              {selectedUrls.size > 0 ? `選択を手動チェック (${selectedUrls.size})` : "選択を手動チェック"}
+            </ButtonSpinner>
           </button>
         </div>
       </header>
@@ -151,7 +212,15 @@ export function UrlListClient({ projectId, initialUrls }: UrlListClientProps) {
             <thead>
               <tr>
                 <th scope="col" style={{ width: 32 }}>
-                  <input type="checkbox" aria-label="すべて選択" />
+                  <input
+                    type="checkbox"
+                    checked={isAllSelected}
+                    ref={(el) => {
+                      if (el) el.indeterminate = isIndeterminate;
+                    }}
+                    onChange={handleToggleAll}
+                    aria-label="すべて選択"
+                  />
                 </th>
                 <th scope="col">URL</th>
                 <th scope="col" style={{ width: 140 }}>最新話</th>
@@ -173,22 +242,61 @@ export function UrlListClient({ projectId, initialUrls }: UrlListClientProps) {
                 filteredUrls.map((row) => (
                   <tr key={row.id}>
                     <td>
-                      <input type="checkbox" aria-label={`${row.url}を選択`} />
+                      <input
+                        type="checkbox"
+                        checked={selectedUrls.has(row.id)}
+                        onChange={() => handleToggleUrl(row.id)}
+                        aria-label={`${row.url}を選択`}
+                      />
                     </td>
                     <td data-label="URL">
-                      <Link
-                        href={`/projects/${projectId}/urls/${row.id}`}
-                        style={{
-                          fontWeight: 500,
-                          display: "block",
-                          color: "var(--info)",
-                          textDecoration: "none"
-                        }}
-                        onMouseEnter={(e) => e.currentTarget.style.textDecoration = "underline"}
-                        onMouseLeave={(e) => e.currentTarget.style.textDecoration = "none"}
-                      >
-                        {row.url}
-                      </Link>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <Link
+                          href={`/projects/${projectId}/urls/${row.id}`}
+                          style={{
+                            fontWeight: 500,
+                            flex: 1,
+                            color: "var(--info)",
+                            textDecoration: "none",
+                            wordBreak: "break-all",
+                          }}
+                          onMouseEnter={(e) => e.currentTarget.style.textDecoration = "underline"}
+                          onMouseLeave={(e) => e.currentTarget.style.textDecoration = "none"}
+                        >
+                          {row.url}
+                        </Link>
+                        <a
+                          href={row.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          aria-label={`${row.url} を開く`}
+                          title="URLを新しいタブで開く"
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            width: 30,
+                            height: 30,
+                            borderRadius: 6,
+                            border: "1px solid var(--border)",
+                            background: "#fff",
+                            color: "var(--muted)",
+                            transition: "all 0.15s",
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.background = "#f7fafa";
+                            e.currentTarget.style.color = "var(--text)";
+                            e.currentTarget.style.borderColor = "var(--info)";
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.background = "#fff";
+                            e.currentTarget.style.color = "var(--muted)";
+                            e.currentTarget.style.borderColor = "var(--border)";
+                          }}
+                        >
+                          <ExternalLink size={16} />
+                        </a>
+                      </div>
                       {row.note ? (
                         <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 2, lineHeight: 1.4 }}>
                           {row.note}

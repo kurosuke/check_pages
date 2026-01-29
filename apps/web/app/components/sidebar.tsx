@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Gauge, Globe2, Bell, Users, Settings, FolderPlus, ChevronDown, ChevronRight } from "lucide-react";
+import { Gauge, Globe2, Bell, Users, Settings, FolderPlus, ChevronDown, ChevronRight, Folder } from "lucide-react";
 import { useState, useEffect } from "react";
 import { CreateProjectModal } from "./create-project-modal";
 
@@ -90,7 +90,10 @@ export function Sidebar() {
                         href={`/projects/${project.id}/urls`}
                         className={`project-name ${currentProjectId === project.id ? "active" : ""}`}
                       >
-                        {project.name}
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+                          <Folder size={14} />
+                          {project.name}
+                        </span>
                       </Link>
                       {currentProjectId === project.id && (
                         <div className="project-subnav">
@@ -188,13 +191,11 @@ export function Sidebar() {
           margin-bottom: 6px;
         }
         .project-name:hover {
-          background: #f9fafb;
           color: var(--text);
         }
         .project-name.active {
-          background: #f3f4f6;
-          color: var(--text);
-          font-weight: 500;
+          color: var(--primary);
+          font-weight: 600;
         }
         .project-subnav {
           padding-left: 20px;
@@ -217,12 +218,10 @@ export function Sidebar() {
         }
         .project-subnav :global(a:hover) {
           color: var(--text);
-          background: #f9fafb;
         }
         .project-subnav :global(a.active) {
           color: var(--primary);
-          background: #f0f9ff;
-          font-weight: 500;
+          font-weight: 600;
         }
         .loading-text,
         .empty-text {

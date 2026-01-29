@@ -54,12 +54,13 @@ function detectFeedType(url: string): FeedInfo {
     };
   }
   
-  // カクヨム (kakuyomu.jp) - has RSS
+  // カクヨム (kakuyomu.jp) - use RSSHub feed for episode updates
   const kakuyomuMatch = url.match(/^https?:\/\/kakuyomu\.jp\/works\/(\d+)\/?$/i);
   if (kakuyomuMatch) {
     return {
       type: "rss",
-      feedUrl: `https://kakuyomu.jp/works/${kakuyomuMatch[1]}.rss`,
+      // Official site does not expose an RSS endpoint; RSSHub provides a compatible feed.
+      feedUrl: `https://rsshub.app/kakuyomu/episode/${kakuyomuMatch[1]}`,
     };
   }
   
@@ -310,7 +311,9 @@ async function runNarouApiCheck(row: DueUrl, feedInfo: FeedInfo): Promise<void> 
 /**
  * Run check via RSS feed
  */
-async function runRssCheck(row: DueUrl, feedInfo: FeedInfo): Promise<void> {
+type RssResult = { ok: boolean; fallbackToHtml: boolean };
+
+async function runRssCheck(row: DueUrl, feedInfo: FeedInfo): Promise<RssResult> {
   console.log(`[check-runner] RSS check for: ${row.url} -> ${feedInfo.feedUrl}`);
   const startedAt = new Date().toISOString();
   let status: CheckStatus = "ok";
@@ -318,30 +321,62 @@ async function runRssCheck(row: DueUrl, feedInfo: FeedInfo): Promise<void> {
   let responseMs: number | null = null;
   let errorMessage: string | null = null;
   let contentHash: string | null = null;
+  let fetchedFeedUrl: string | null = null;
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
 
   try {
-    const t0 = performance.now();
-    const res = await fetch(feedInfo.feedUrl, {
-      redirect: "follow",
-      signal: controller.signal,
-      headers: {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-        "Accept": "application/rss+xml, application/xml, text/xml, */*",
-      },
-    });
-    const t1 = performance.now();
-    httpStatus = res.status;
-    responseMs = Math.round(t1 - t0);
-    console.log(`[check-runner] RSS fetch: status=${httpStatus}, time=${responseMs}ms`);
+    const candidateFeedUrls = (() => {
+      if (feedInfo.feedUrl.includes("rsshub.")) {
+        const variants = [
+          feedInfo.feedUrl,
+          feedInfo.feedUrl.replace("rsshub.app", "rsshub.moeyy.cn"),
+          feedInfo.feedUrl.replace("rsshub.app", "rsshub.rssforever.com"),
+        ];
+        // dedupe
+        return variants.filter((v, i, arr) => arr.indexOf(v) === i);
+      }
+      return [feedInfo.feedUrl];
+    })();
 
-    if (!res.ok) {
-      throw new Error(`HTTP ${httpStatus}`);
+    let rssXml: string | null = null;
+    let lastError: unknown = null;
+
+    for (const candidate of candidateFeedUrls) {
+      try {
+        const t0 = performance.now();
+        const res = await fetch(candidate, {
+          redirect: "follow",
+          signal: controller.signal,
+          headers: {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "Accept": "application/rss+xml, application/xml, text/xml, */*",
+          },
+        });
+        const t1 = performance.now();
+        httpStatus = res.status;
+        responseMs = Math.round(t1 - t0);
+        console.log(`[check-runner] RSS fetch: url=${candidate}, status=${httpStatus}, time=${responseMs}ms`);
+
+        if (!res.ok) {
+          throw new Error(`HTTP ${httpStatus}`);
+        }
+
+        rssXml = await res.text();
+        fetchedFeedUrl = candidate;
+        break; // success
+      } catch (err) {
+        lastError = err;
+        console.warn(`[check-runner] RSS fetch failed for ${candidate}: ${err instanceof Error ? err.message : String(err)}`);
+        continue;
+      }
     }
 
-    const rssXml = await res.text();
+    if (!rssXml) {
+      throw lastError instanceof Error ? lastError : new Error("Failed to fetch RSS feed");
+    }
+
     contentHash = await sha256Hex(rssXml);
     
     const latestItem = parseRssFeed(rssXml);
@@ -385,11 +420,13 @@ async function runRssCheck(row: DueUrl, feedInfo: FeedInfo): Promise<void> {
     } else {
       console.log(`[check-runner] URL updated with latest item: ${latestItem.id}`);
     }
+    return { ok: true, fallbackToHtml: false };
 
   } catch (err: unknown) {
     status = "error";
     errorMessage = err instanceof Error ? err.message : String(err);
     console.error(`[check-runner] RSS check error: ${errorMessage}`);
+    const fallbackToHtml = feedInfo.feedUrl.includes("kakuyomu");
 
     await supabase.from("checks").insert({
       url_id: row.id,
@@ -401,10 +438,15 @@ async function runRssCheck(row: DueUrl, feedInfo: FeedInfo): Promise<void> {
       error_message: errorMessage,
     });
 
-    await supabase
-      .from("urls")
-      .update({ last_checked_at: new Date().toISOString() })
-      .eq("id", row.id);
+    if (!fallbackToHtml) {
+      await supabase
+        .from("urls")
+        .update({ last_checked_at: new Date().toISOString() })
+        .eq("id", row.id);
+    } else {
+      console.log("[check-runner] Kakuyomu RSS failed; will fallback to HTML scraping.");
+    }
+    return { ok: false, fallbackToHtml };
   } finally {
     clearTimeout(timer);
   }
@@ -510,7 +552,12 @@ async function runCheck(row: DueUrl): Promise<void> {
       await runNarouApiCheck(row, feedInfo);
       break;
     case "rss":
-      await runRssCheck(row, feedInfo);
+      {
+        const result = await runRssCheck(row, feedInfo);
+        if (!result.ok && result.fallbackToHtml) {
+          await runHtmlCheck(row);
+        }
+      }
       break;
     case "html":
     default:

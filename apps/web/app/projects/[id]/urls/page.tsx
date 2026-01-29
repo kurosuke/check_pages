@@ -14,7 +14,8 @@ function extractLatestNarouEpisode(url: string, latestItemId?: string | null): s
 async function fetchUrls(projectId: string) {
   try {
     const supabase = serviceClient();
-    const [urlsRes, checksRes] = await Promise.all([
+    const [projectRes, urlsRes, checksRes] = await Promise.all([
+      supabase.from("projects").select("name").eq("id", projectId).single(),
       supabase.from("urls").select("*").eq("project_id", projectId).limit(200),
       supabase
         .from("checks")
@@ -53,15 +54,15 @@ async function fetchUrls(projectId: string) {
       };
     }) ?? [];
 
-    return urls;
+    return { projectName: projectRes.data?.name ?? "Unknown Project", urls };
   } catch (e) {
     console.error("Failed to fetch URLs:", e);
-    return mockUrls;
+    return { projectName: "Unknown Project", urls: mockUrls };
   }
 }
 
 export default async function UrlListPage({ params }: PageProps) {
-  const urls = await fetchUrls(params.id);
+  const { projectName, urls } = await fetchUrls(params.id);
 
-  return <UrlListClient projectId={params.id} initialUrls={urls} />;
+  return <UrlListClient projectId={params.id} projectName={projectName} initialUrls={urls} />;
 }

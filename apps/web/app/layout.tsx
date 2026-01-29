@@ -1,6 +1,7 @@
 import "./globals.css";
 import { Sidebar } from "./components/sidebar";
 import { SupabaseProvider } from "./supabase-provider";
+import { ToastProvider } from "./components/ui/toast";
 import { createServerSupabase } from "./lib/supabase/server";
 
 export const metadata = {
@@ -18,10 +19,12 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     <html lang="ja">
       <body>
         <SupabaseProvider initialSession={session}>
-          <div className="layout">
-            <Sidebar />
-            <div className="content">{children}</div>
-          </div>
+          <ToastProvider>
+            <div className="layout">
+              <Sidebar />
+              <div className="content">{children}</div>
+            </div>
+          </ToastProvider>
         </SupabaseProvider>
       </body>
     </html>

@@ -1,10 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { Search, SlidersHorizontal, PlayCircle, Plus, Trash2 } from "lucide-react";
+import { Search, SlidersHorizontal, PlayCircle, Plus, Trash2, MoreVertical, ExternalLink, RefreshCw, Edit2 } from "lucide-react";
 import Link from "next/link";
 import { StatusPill } from "@/app/components/status-pill";
 import { AddUrlModal } from "@/app/components/add-url-modal";
+import { useToast } from "@/app/components/ui/toast";
+import { ButtonSpinner } from "@/app/components/ui/spinner";
+import { DropdownMenu, DropdownItem, DropdownDivider } from "@/app/components/ui/dropdown-menu";
 import { useRouter } from "next/navigation";
 
 interface UrlRow {
@@ -29,6 +32,7 @@ export function UrlListClient({ projectId, initialUrls }: UrlListClientProps) {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [checkingId, setCheckingId] = useState<string | null>(null);
   const router = useRouter();
+  const { showToast } = useToast();
 
   const handleAddSuccess = () => {
     // Refresh the page to fetch new data from server
@@ -47,13 +51,14 @@ export function UrlListClient({ projectId, initialUrls }: UrlListClientProps) {
       });
 
       if (response.ok) {
+        showToast("URLを削除しました", "success");
         router.refresh();
       } else {
         const data = await response.json();
-        alert(`削除に失敗しました: ${data.error || "不明なエラー"}`);
+        showToast(`削除に失敗しました: ${data.error || "不明なエラー"}`, "error");
       }
     } catch (error) {
-      alert("削除中にエラーが発生しました");
+      showToast("削除中にエラーが発生しました", "error");
       console.error("Delete error:", error);
     } finally {
       setDeletingId(null);
@@ -68,13 +73,14 @@ export function UrlListClient({ projectId, initialUrls }: UrlListClientProps) {
       });
       const data = await res.json().catch(() => ({}));
       if (data?.success) {
+        showToast("チェックを開始しました", "success");
         router.refresh();
       } else {
-        alert(`チェックに失敗しました: ${data?.error || res.statusText}`);
+        showToast(`チェックに失敗しました: ${data?.error || res.statusText}`, "error");
       }
     } catch (err) {
       console.error("Check error", err);
-      alert("チェック呼び出しでエラーが発生しました");
+      showToast("チェック呼び出しでエラーが発生しました", "error");
     } finally {
       setCheckingId(null);
     }
@@ -94,14 +100,18 @@ export function UrlListClient({ projectId, initialUrls }: UrlListClientProps) {
       <header className="header">
         <div>
           <div style={{ color: "var(--muted)", fontSize: 12 }}>プロジェクト</div>
-          <div style={{ fontSize: 18, fontWeight: 600 }}>Project {projectId} / URL一覧</div>
+          <h1 style={{ fontSize: 18, fontWeight: 600, margin: 0 }}>Project {projectId} / URL一覧</h1>
         </div>
         <div className="stack">
-          <button className="button ghost">
+          <button className="button ghost" aria-label="フィルタを開く">
             <SlidersHorizontal size={16} />
             フィルタ
           </button>
-          <button className="button ghost" disabled={checkingId !== null}>
+          <button
+            className="button ghost"
+            disabled={checkingId !== null}
+            aria-label="選択したURLを手動チェック"
+          >
             <PlayCircle size={16} />
             選択を手動チェック
           </button>
@@ -109,13 +119,17 @@ export function UrlListClient({ projectId, initialUrls }: UrlListClientProps) {
       </header>
 
       <main className="main">
-        <div className="card" style={{ paddingBottom: 6 }}>
+        <section className="card" style={{ paddingBottom: 6 }} aria-labelledby="url-list-heading">
           <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
             <div style={{ position: "relative", flex: 1 }}>
+              <label htmlFor="url-search" className="visually-hidden">URLを検索</label>
               <input
+                id="url-search"
+                type="search"
                 placeholder="URL / タグ / メモで検索"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                aria-label="URL、タグ、メモで検索"
                 style={{
                   width: "100%",
                   background: "rgba(255,255,255,0.04)",
@@ -125,27 +139,27 @@ export function UrlListClient({ projectId, initialUrls }: UrlListClientProps) {
                   color: "var(--text)",
                 }}
               />
-              <Search size={16} style={{ position: "absolute", left: 12, top: 10, color: "var(--muted)" }} />
+              <Search size={16} style={{ position: "absolute", left: 12, top: 10, color: "var(--muted)" }} aria-hidden="true" />
             </div>
-            <button className="button" onClick={() => setIsModalOpen(true)}>
-              <Plus size={16} />
+            <button className="button" onClick={() => setIsModalOpen(true)} aria-label="新しいURLを追加">
+              <Plus size={16} aria-hidden="true" />
               新規URL追加
             </button>
           </div>
 
-          <table className="table">
+          <table className="table" role="table" aria-label="監視URL一覧">
             <thead>
               <tr>
-                <th style={{ width: 32 }}>
-                  <input type="checkbox" />
+                <th scope="col" style={{ width: 32 }}>
+                  <input type="checkbox" aria-label="すべて選択" />
                 </th>
-                <th>URL</th>
-                <th style={{ width: 140 }}>最新話</th>
-                <th>タグ</th>
-                <th>Status</th>
-                <th>Response</th>
-                <th>最終チェック</th>
-                <th></th>
+                <th scope="col">URL</th>
+                <th scope="col" style={{ width: 140 }}>最新話</th>
+                <th scope="col">タグ</th>
+                <th scope="col">Status</th>
+                <th scope="col">Response</th>
+                <th scope="col">最終チェック</th>
+                <th scope="col" style={{ width: 100, textAlign: "right" }}>操作</th>
               </tr>
             </thead>
             <tbody>
@@ -159,10 +173,20 @@ export function UrlListClient({ projectId, initialUrls }: UrlListClientProps) {
                 filteredUrls.map((row) => (
                   <tr key={row.id}>
                     <td>
-                      <input type="checkbox" />
+                      <input type="checkbox" aria-label={`${row.url}を選択`} />
                     </td>
-                    <td>
-                      <Link href={`/projects/${projectId}/urls/${row.id}`} style={{ fontWeight: 600, display: "block" }}>
+                    <td data-label="URL">
+                      <Link
+                        href={`/projects/${projectId}/urls/${row.id}`}
+                        style={{
+                          fontWeight: 500,
+                          display: "block",
+                          color: "var(--info)",
+                          textDecoration: "none"
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.textDecoration = "underline"}
+                        onMouseLeave={(e) => e.currentTarget.style.textDecoration = "none"}
+                      >
                         {row.url}
                       </Link>
                       {row.note ? (
@@ -171,39 +195,59 @@ export function UrlListClient({ projectId, initialUrls }: UrlListClientProps) {
                         </div>
                       ) : null}
                     </td>
-                    <td className="mono">{row.latestEpisode ?? "-"}</td>
-                    <td className="stack">
+                    <td data-label="最新話" className="mono">{row.latestEpisode ?? "-"}</td>
+                    <td data-label="タグ" className="stack">
                       {row.tags.map((t) => (
                         <span key={t} className="tag">
                           {t}
                         </span>
                       ))}
                     </td>
-                    <td>
+                    <td data-label="Status">
                       <StatusPill status={row.status} />
                     </td>
-                    <td className="mono">{row.latency ? `${row.latency}ms` : "-"}</td>
-                    <td>{row.checked}</td>
-                    <td>
-                      <div className="stack">
-                        <Link className="badge" href={`/projects/${projectId}/urls/${row.id}`}>
-                          詳細
-                        </Link>
+                    <td data-label="Response" className="mono">{row.latency ? `${row.latency}ms` : "-"}</td>
+                    <td data-label="最終チェック">{row.checked}</td>
+                    <td data-label="操作">
+                      <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", alignItems: "center" }}>
                         <button
-                          className="badge"
                           onClick={() => handleCheck(row.id)}
                           disabled={checkingId === row.id}
+                          aria-label="チェック実行"
+                          className="action-button primary"
                         >
-                          {checkingId === row.id ? "..." : "チェック"}
+                          <ButtonSpinner loading={checkingId === row.id}>
+                            <RefreshCw size={14} />
+                            <span className="action-button-text">チェック</span>
+                          </ButtonSpinner>
                         </button>
-                        <button
-                          className="badge danger"
-                          onClick={() => handleDelete(row.id, row.url)}
-                          disabled={deletingId === row.id}
-                          title="削除"
-                        >
-                          {deletingId === row.id ? "..." : <Trash2 size={12} />}
-                        </button>
+
+                        <DropdownMenu trigger={<MoreVertical size={18} />}>
+                          <DropdownItem
+                            icon={<ExternalLink size={16} />}
+                            onClick={() => window.open(`/projects/${projectId}/urls/${row.id}`, "_self")}
+                          >
+                            詳細を見る
+                          </DropdownItem>
+                          <DropdownItem
+                            icon={<Edit2 size={16} />}
+                            onClick={() => {
+                              // TODO: 編集モーダルを開く
+                              showToast("編集機能は近日実装予定です", "info");
+                            }}
+                          >
+                            編集
+                          </DropdownItem>
+                          <DropdownDivider />
+                          <DropdownItem
+                            icon={<Trash2 size={16} />}
+                            onClick={() => handleDelete(row.id, row.url)}
+                            danger
+                            disabled={deletingId === row.id}
+                          >
+                            {deletingId === row.id ? "削除中..." : "削除"}
+                          </DropdownItem>
+                        </DropdownMenu>
                       </div>
                     </td>
                   </tr>
@@ -211,7 +255,7 @@ export function UrlListClient({ projectId, initialUrls }: UrlListClientProps) {
               )}
             </tbody>
           </table>
-        </div>
+        </section>
       </main>
 
       <AddUrlModal

@@ -145,7 +145,7 @@ export default async function UrlDetailPage({ params }: PageProps) {
                 {t}
               </span>
             ))}
-            <StatusPill status={target.status} />
+            <StatusPill status={target.status} size="large" />
           </div>
         </div>
         <div className="stack">
@@ -253,7 +253,7 @@ export default async function UrlDetailPage({ params }: PageProps) {
             <div className="timeline">
               {timeline.map((item) => (
                 <div key={item.id} className="timeline-item">
-                  <StatusPill status={item.status} />
+                  <StatusPill status={item.status} size="medium" />
                   <div>
                     <div style={{ fontWeight: 600 }}>{item.url}</div>
                     <div style={{ color: "var(--muted)", fontSize: 12 }}>

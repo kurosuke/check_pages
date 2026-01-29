@@ -137,7 +137,7 @@ export function Sidebar() {
 
       <style jsx>{`
         .nav-section {
-          margin: 8px 0;
+          margin: 20px 0 24px 0;
         }
         .nav-section-header {
           display: flex;
@@ -147,89 +147,109 @@ export function Sidebar() {
           background: none;
           border: none;
           color: var(--muted);
-          font-size: 12px;
+          font-size: 11px;
+          font-weight: 700;
           text-transform: uppercase;
-          letter-spacing: 0.5px;
+          letter-spacing: 0.8px;
           padding: 8px 12px;
           cursor: pointer;
-          transition: color 0.2s;
+          transition: all 0.2s;
         }
         .nav-section-header:hover {
           color: var(--text);
         }
         .project-count {
-          background: var(--border);
-          padding: 2px 6px;
-          border-radius: 10px;
+          background: #e5e7eb;
+          color: var(--text);
+          padding: 2px 7px;
+          border-radius: 12px;
           font-size: 11px;
+          font-weight: 600;
         }
         .project-list {
           padding-left: 0;
+          margin-top: 8px;
         }
         .project-item {
-          margin-bottom: 2px;
+          margin-bottom: 12px;
         }
         .project-name {
           display: block;
-          padding: 8px 12px 8px 24px;
-          color: var(--text);
+          padding: 8px 12px;
+          color: #6b7280;
           text-decoration: none;
           border-radius: 6px;
-          font-size: 14px;
-          transition: background 0.2s;
+          font-size: 13px;
+          font-weight: 500;
+          transition: all 0.2s;
           white-space: nowrap;
           overflow: hidden;
           text-overflow: ellipsis;
+          margin-bottom: 6px;
         }
         .project-name:hover {
-          background: rgba(255, 255, 255, 0.05);
+          background: #f9fafb;
+          color: var(--text);
         }
         .project-name.active {
-          background: rgba(255, 255, 255, 0.1);
-          color: var(--info);
+          background: #f3f4f6;
+          color: var(--text);
+          font-weight: 500;
         }
         .project-subnav {
-          padding-left: 24px;
-          border-left: 1px solid var(--border);
-          margin-left: 24px;
+          padding-left: 20px;
+          margin-left: 12px;
+          margin-top: 6px;
+          margin-bottom: 8px;
+          padding-top: 4px;
+          padding-bottom: 4px;
         }
         .project-subnav :global(a) {
           display: block;
           padding: 6px 12px;
-          color: var(--muted);
+          color: #9ca3af;
           text-decoration: none;
-          font-size: 13px;
-          transition: color 0.2s;
+          font-size: 12px;
+          font-weight: 400;
+          transition: all 0.2s;
+          border-radius: 6px;
+          margin-bottom: 2px;
         }
         .project-subnav :global(a:hover) {
           color: var(--text);
+          background: #f9fafb;
         }
         .project-subnav :global(a.active) {
-          color: var(--info);
+          color: var(--primary);
+          background: #f0f9ff;
+          font-weight: 500;
         }
         .loading-text,
         .empty-text {
-          padding: 8px 12px 8px 24px;
+          padding: 8px 12px;
           color: var(--muted);
           font-size: 13px;
+          font-style: italic;
         }
         .create-project-btn {
           display: flex;
           align-items: center;
+          justify-content: center;
           gap: 8px;
           width: calc(100% - 24px);
-          margin: 8px 12px;
-          padding: 8px 12px;
-          background: rgba(59, 130, 246, 0.1);
-          border: 1px dashed var(--info);
+          margin: 12px 12px 8px 12px;
+          padding: 10px 12px;
+          background: #f0f9ff;
+          border: none;
           border-radius: 6px;
-          color: var(--info);
-          font-size: 13px;
+          color: var(--primary);
+          font-size: 12px;
+          font-weight: 500;
           cursor: pointer;
-          transition: background 0.2s;
+          transition: all 0.2s;
         }
         .create-project-btn:hover {
-          background: rgba(59, 130, 246, 0.2);
+          background: #e0f2fe;
         }
       `}</style>
     </>

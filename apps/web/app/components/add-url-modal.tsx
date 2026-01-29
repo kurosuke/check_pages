@@ -254,61 +254,78 @@ export function AddUrlModal({ projectId, isOpen, onClose, onSuccess }: AddUrlMod
         .modal-overlay {
           position: fixed;
           inset: 0;
-          background: rgba(0, 0, 0, 0.6);
+          background: rgba(0, 0, 0, 0.5);
           display: flex;
           align-items: center;
           justify-content: center;
           z-index: 1000;
           padding: 20px;
+          backdrop-filter: blur(2px);
         }
         .modal-content {
-          background: var(--card);
-          border-radius: 12px;
+          background: #ffffff;
+          border-radius: 8px;
+          border: 1px solid var(--border);
           width: 100%;
-          max-width: 520px;
+          max-width: 600px;
           max-height: 90vh;
           overflow-y: auto;
-          padding: 24px;
+          padding: 28px;
+          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
         }
         .modal-header {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          margin-bottom: 20px;
+          margin-bottom: 24px;
+          padding-bottom: 16px;
+          border-bottom: 1px solid var(--border);
+        }
+        .modal-header h2 {
+          font-size: 20px;
+          font-weight: 600;
+          color: var(--text);
         }
         .icon-button {
           background: none;
           border: none;
           color: var(--muted);
           cursor: pointer;
-          padding: 4px;
+          padding: 6px;
           border-radius: 4px;
+          transition: all 0.15s;
         }
         .icon-button:hover {
           color: var(--text);
-          background: rgba(255, 255, 255, 0.1);
+          background: #f3f4f6;
         }
         .form-group {
-          margin-bottom: 16px;
+          margin-bottom: 20px;
         }
         .form-group label {
           display: block;
-          margin-bottom: 6px;
+          margin-bottom: 8px;
           font-size: 14px;
-          color: var(--muted);
+          font-weight: 600;
+          color: var(--text);
         }
         .form-input {
           width: 100%;
-          background: rgba(255, 255, 255, 0.04);
+          background: #ffffff;
           border: 1px solid var(--border);
-          border-radius: 8px;
+          border-radius: 4px;
           padding: 10px 12px;
           color: var(--text);
           font-size: 14px;
+          transition: border-color 0.15s, box-shadow 0.15s;
         }
         .form-input:focus {
           outline: none;
           border-color: var(--info);
+          box-shadow: 0 0 0 3px rgba(0, 113, 133, 0.1);
+        }
+        .form-input:hover {
+          border-color: #8b9196;
         }
         .form-row {
           display: grid;
@@ -346,19 +363,21 @@ export function AddUrlModal({ projectId, isOpen, onClose, onSuccess }: AddUrlMod
           color: var(--muted);
         }
         .error-message {
-          background: rgba(239, 68, 68, 0.1);
-          border: 1px solid var(--error);
+          background: #fef2f2;
+          border: 1px solid #fca5a5;
           color: var(--error);
-          padding: 10px 12px;
-          border-radius: 8px;
-          margin-bottom: 16px;
+          padding: 12px 14px;
+          border-radius: 4px;
+          margin-bottom: 20px;
           font-size: 14px;
         }
         .modal-footer {
           display: flex;
           justify-content: flex-end;
           gap: 12px;
-          margin-top: 24px;
+          margin-top: 28px;
+          padding-top: 20px;
+          border-top: 1px solid var(--border);
         }
       `}</style>
     </div>

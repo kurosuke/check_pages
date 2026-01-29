@@ -91,6 +91,7 @@ export default async function UrlDetailPage({ params }: PageProps) {
 
   const target = {
     url: urlData.url,
+    note: urlData.note as string | null,
     tags: urlData.tags || [],
     status: (latestCheck?.status ?? "ok") as "ok" | "error" | "changed",
     lastChecked: latestCheck?.started_at
@@ -135,6 +136,9 @@ export default async function UrlDetailPage({ params }: PageProps) {
         <div>
           <div style={{ color: "var(--muted)", fontSize: 12 }}>URL詳細</div>
           <div style={{ fontSize: 18, fontWeight: 600 }}>{target.url}</div>
+          <div style={{ marginTop: 6, fontSize: 13, color: target.note ? "var(--text)" : "var(--muted)" }}>
+            {target.note || "メモ未設定"}
+          </div>
           <div className="stack" style={{ marginTop: 6 }}>
             {target.tags.map((t: string) => (
               <span key={t} className="tag">

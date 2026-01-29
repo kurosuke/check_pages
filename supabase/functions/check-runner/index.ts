@@ -532,8 +532,46 @@ Deno.serve(async (req: Request) => {
   try {
     const url = new URL(req.url);
     const force = url.searchParams.get("force") === "true";
+    const urlId = url.searchParams.get("url_id");
     console.log(`[check-runner] Request: method=${method}, force=${force}`);
-    
+    // Single URL override (manual check)
+    if (urlId) {
+      console.log(`[check-runner] Single URL mode for url_id=${urlId}`);
+      const { data: singleUrl, error: singleErr } = await supabase
+        .from("urls")
+        .select("id, project_id, url, latest_item_id, latest_item_published_at, active")
+        .eq("id", urlId)
+        .maybeSingle();
+
+      if (singleErr || !singleUrl) {
+        const msg = singleErr?.message || "URL not found";
+        return new Response(JSON.stringify({ success: false, error: msg }), {
+          status: 404,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+      if (!singleUrl.active) {
+        return new Response(JSON.stringify({ success: false, error: "URL is inactive" }), {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+
+      await runCheck(singleUrl as DueUrl);
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          processed: 1,
+          timestamp: new Date().toISOString(),
+        }),
+        {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+    }
+
     const urls = await fetchDueUrls(force);
 
     for (const row of urls) {

@@ -4,6 +4,13 @@ import { UrlListClient } from "./url-list-client";
 
 type PageProps = { params: { id: string } };
 
+function extractLatestNarouEpisode(url: string, latestItemId?: string | null): string | null {
+  const narouMatch = url.match(/ncode\.syosetu\.com\/([^/]+)/i);
+  if (!narouMatch || !latestItemId) return null;
+  const parts = latestItemId.split("-");
+  return parts.length > 1 ? parts[parts.length - 1] : null;
+}
+
 async function fetchUrls(projectId: string) {
   try {
     const supabase = serviceClient();
@@ -11,7 +18,7 @@ async function fetchUrls(projectId: string) {
       supabase.from("urls").select("*").eq("project_id", projectId).limit(200),
       supabase
         .from("checks")
-        .select("url_id,status,http_status,response_ms,started_at")
+        .select("url_id,status,response_ms,started_at")
         .order("started_at", { ascending: false })
         .limit(400)
     ]);
@@ -23,17 +30,26 @@ async function fetchUrls(projectId: string) {
 
     const urls = urlsRes.data?.map((u) => {
       const last = latestByUrl.get(u.id);
+      const latestEpisode = extractLatestNarouEpisode(u.url, u.latest_item_id);
       return {
         id: u.id,
         url: u.url,
         tags: u.tags || [],
+        note: u.note || null,
+        latestEpisode,
         status: (last?.status ?? "ok") as MockUrl["status"],
-        http: last?.http_status ?? 0,
         latency: last?.response_ms ?? 0,
         checked: last?.started_at
-          ? new Date(last.started_at).toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" })
-          : "-",
-        diff: "-"
+          ? new Date(last.started_at).toLocaleString("ja-JP", {
+              timeZone: "Asia/Tokyo",
+              year: "numeric",
+              month: "2-digit",
+              day: "2-digit",
+              hour: "2-digit",
+              minute: "2-digit",
+              timeZoneName: "short"
+            })
+          : "-"
       };
     }) ?? [];
 

@@ -16,11 +16,11 @@ export type UrlRow = {
   id: string;
   url: string;
   tags: string[];
+  note?: string | null;
+  latestEpisode: string | null;
   status: "ok" | "error" | "changed";
-  http: number;
   latency: number;
   checked: string;
-  diff: string;
 };
 
 export const urls: UrlRow[] = [
@@ -28,41 +28,41 @@ export const urls: UrlRow[] = [
     id: "u1",
     url: "https://example.com",
     tags: ["marketing"],
+    note: "LP",
+    latestEpisode: null,
     status: "ok",
-    http: 200,
     latency: 420,
-    checked: "09:12",
-    diff: "0.8%"
+    checked: "2026/01/29 09:12 JST"
   },
   {
     id: "u2",
     url: "https://store.example.com",
     tags: ["shop", "prod"],
+    note: "EC本番",
+    latestEpisode: null,
     status: "error",
-    http: 500,
     latency: 0,
-    checked: "08:48",
-    diff: "-"
+    checked: "2026/01/29 08:48 JST"
   },
   {
     id: "u3",
     url: "https://blog.example.com",
     tags: ["content"],
+    note: "週次更新ブログ",
+    latestEpisode: null,
     status: "changed",
-    http: 200,
     latency: 580,
-    checked: "08:55",
-    diff: "2.3%"
+    checked: "2026/01/29 08:55 JST"
   },
   {
     id: "u4",
     url: "https://status.example.com",
     tags: ["status"],
+    note: "ステータスページ",
+    latestEpisode: null,
     status: "ok",
-    http: 200,
     latency: 180,
-    checked: "08:40",
-    diff: "0%"
+    checked: "2026/01/29 08:40 JST"
   }
 ];
 

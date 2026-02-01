@@ -1,13 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { Search, SlidersHorizontal, PlayCircle, Plus, Trash2, MoreVertical, ExternalLink, RefreshCw, Edit2 } from "lucide-react";
+import { Search, SlidersHorizontal, PlayCircle, Plus, Trash2, MoreVertical, ExternalLink, RefreshCw, Edit2, FolderInput, RotateCw } from "lucide-react";
 import Link from "next/link";
 import { StatusPill } from "@/app/components/status-pill";
 import { AddUrlModal } from "@/app/components/add-url-modal";
 import { useToast } from "@/app/components/ui/toast";
 import { ButtonSpinner } from "@/app/components/ui/spinner";
 import { DropdownMenu, DropdownItem, DropdownDivider } from "@/app/components/ui/dropdown-menu";
+import { MoveUrlModal } from "@/app/components/move-url-modal";
 import { useRouter } from "next/navigation";
 
 interface UrlRow {
@@ -34,8 +35,21 @@ export function UrlListClient({ projectId, projectName, initialUrls }: UrlListCl
   const [checkingId, setCheckingId] = useState<string | null>(null);
   const [selectedUrls, setSelectedUrls] = useState<Set<string>>(new Set());
   const [bulkChecking, setBulkChecking] = useState(false);
+  const [moveModalUrl, setMoveModalUrl] = useState<{ id: string; url: string } | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
   const router = useRouter();
   const { showToast } = useToast();
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      router.refresh();
+      showToast("一覧を更新しました", "success");
+    } finally {
+      // router.refreshは非同期だが完了を待てないので少し待つ
+      setTimeout(() => setRefreshing(false), 500);
+    }
+  };
 
   const handleAddSuccess = () => {
     // Refresh the page to fetch new data from server
@@ -161,6 +175,18 @@ export function UrlListClient({ projectId, projectName, initialUrls }: UrlListCl
           <h1 style={{ fontSize: 18, fontWeight: 600, margin: 0 }}>{projectName} / URL一覧</h1>
         </div>
         <div className="stack">
+          <button
+            className="button ghost"
+            onClick={handleRefresh}
+            disabled={refreshing}
+            aria-label="一覧を更新"
+            title="最新の情報に更新"
+          >
+            <ButtonSpinner loading={refreshing}>
+              <RotateCw size={16} style={refreshing ? { animation: "spin 1s linear infinite" } : undefined} />
+              更新
+            </ButtonSpinner>
+          </button>
           <button className="button ghost" aria-label="フィルタを開く">
             <SlidersHorizontal size={16} />
             フィルタ
@@ -250,18 +276,32 @@ export function UrlListClient({ projectId, projectName, initialUrls }: UrlListCl
                       />
                     </td>
                     <td data-label="URL">
-                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                         <Link
                           href={`/projects/${projectId}/urls/${row.id}`}
                           style={{
-                            fontWeight: 500,
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 8,
                             flex: 1,
+                            padding: "8px 12px",
+                            borderRadius: 8,
+                            background: "#f8fafc",
+                            border: "1px solid var(--border)",
                             color: "var(--info)",
                             textDecoration: "none",
                             wordBreak: "break-all",
+                            fontWeight: 500,
+                            transition: "all 0.15s",
                           }}
-                          onMouseEnter={(e) => e.currentTarget.style.textDecoration = "underline"}
-                          onMouseLeave={(e) => e.currentTarget.style.textDecoration = "none"}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.background = "#eff6ff";
+                            e.currentTarget.style.borderColor = "var(--info)";
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.background = "#f8fafc";
+                            e.currentTarget.style.borderColor = "var(--border)";
+                          }}
                         >
                           {row.url}
                         </Link>
@@ -275,17 +315,18 @@ export function UrlListClient({ projectId, projectName, initialUrls }: UrlListCl
                             display: "inline-flex",
                             alignItems: "center",
                             justifyContent: "center",
-                            width: 30,
-                            height: 30,
-                            borderRadius: 6,
+                            width: 40,
+                            height: 40,
+                            borderRadius: 8,
                             border: "1px solid var(--border)",
                             background: "#fff",
                             color: "var(--muted)",
                             transition: "all 0.15s",
+                            flexShrink: 0,
                           }}
                           onMouseEnter={(e) => {
-                            e.currentTarget.style.background = "#f7fafa";
-                            e.currentTarget.style.color = "var(--text)";
+                            e.currentTarget.style.background = "#f0f9ff";
+                            e.currentTarget.style.color = "var(--info)";
                             e.currentTarget.style.borderColor = "var(--info)";
                           }}
                           onMouseLeave={(e) => {
@@ -294,11 +335,11 @@ export function UrlListClient({ projectId, projectName, initialUrls }: UrlListCl
                             e.currentTarget.style.borderColor = "var(--border)";
                           }}
                         >
-                          <ExternalLink size={16} />
+                          <ExternalLink size={18} />
                         </a>
                       </div>
                       {row.note ? (
-                        <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 2, lineHeight: 1.4 }}>
+                        <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 6, lineHeight: 1.4 }}>
                           {row.note}
                         </div>
                       ) : null}
@@ -346,6 +387,12 @@ export function UrlListClient({ projectId, projectName, initialUrls }: UrlListCl
                           >
                             編集
                           </DropdownItem>
+                          <DropdownItem
+                            icon={<FolderInput size={16} />}
+                            onClick={() => setMoveModalUrl({ id: row.id, url: row.url })}
+                          >
+                            別プロジェクトに移動
+                          </DropdownItem>
                           <DropdownDivider />
                           <DropdownItem
                             icon={<Trash2 size={16} />}
@@ -372,6 +419,20 @@ export function UrlListClient({ projectId, projectName, initialUrls }: UrlListCl
         onClose={() => setIsModalOpen(false)}
         onSuccess={handleAddSuccess}
       />
+
+      {moveModalUrl && (
+        <MoveUrlModal
+          isOpen={true}
+          onClose={() => setMoveModalUrl(null)}
+          onSuccess={() => {
+            setMoveModalUrl(null);
+            router.refresh();
+          }}
+          currentProjectId={projectId}
+          urlId={moveModalUrl.id}
+          urlText={moveModalUrl.url}
+        />
+      )}
     </div>
   );
 }

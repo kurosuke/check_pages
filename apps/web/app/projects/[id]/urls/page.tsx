@@ -2,7 +2,10 @@ import { urls as mockUrls, UrlRow as MockUrl } from "@/app/lib/mock-data";
 import { serviceClient } from "@/app/lib/supabase/service";
 import { UrlListClient } from "./url-list-client";
 
-type PageProps = { params: { id: string } };
+// キャッシュを無効化して常に最新データを取得
+export const dynamic = "force-dynamic";
+
+type PageProps = { params: Promise<{ id: string }> };
 
 function extractLatestNarouEpisode(url: string, latestItemId?: string | null): string | null {
   const narouMatch = url.match(/ncode\.syosetu\.com\/([^/]+)/i);
@@ -62,7 +65,8 @@ async function fetchUrls(projectId: string) {
 }
 
 export default async function UrlListPage({ params }: PageProps) {
-  const { projectName, urls } = await fetchUrls(params.id);
+  const { id: projectId } = await params;
+  const { projectName, urls } = await fetchUrls(projectId);
 
-  return <UrlListClient projectId={params.id} projectName={projectName} initialUrls={urls} />;
+  return <UrlListClient projectId={projectId} projectName={projectName} initialUrls={urls} />;
 }

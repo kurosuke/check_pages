@@ -13,6 +13,7 @@ type Check = {
   started_at: string;
   final_url: string | null;
   ssl_expires_at: string | null;
+  content_hash: string | null;
 };
 
 type Diff = {
@@ -47,7 +48,7 @@ async function fetchUrlDetail(projectId: string, urlId: string) {
   // チェック履歴を取得
   const { data: checksData } = await supabase
     .from("checks")
-    .select("id,status,http_status,response_ms,started_at,final_url,ssl_expires_at")
+    .select("id,status,http_status,response_ms,started_at,final_url,ssl_expires_at,content_hash")
     .eq("url_id", urlId)
     .order("started_at", { ascending: false })
     .limit(50);
@@ -102,7 +103,12 @@ export default async function UrlDetailPage({ params }: PageProps) {
       : "-",
     redirect: latestCheck?.final_url ?? "-",
     response: latestCheck?.response_ms ? `${latestCheck.response_ms}ms` : "-",
-    http: latestCheck?.http_status ?? 0
+    http: latestCheck?.http_status ?? 0,
+    contentHash: latestCheck?.content_hash ?? null,
+    latestItemId: urlData.latest_item_id as string | null,
+    latestItemPublishedAt: urlData.latest_item_published_at
+      ? new Date(urlData.latest_item_published_at as string).toLocaleString("ja-JP", { hour12: false })
+      : null
   };
 
   const timeline = checks.map((item) => ({
@@ -110,7 +116,8 @@ export default async function UrlDetailPage({ params }: PageProps) {
     status: item.status,
     url: target.url,
     http: item.http_status ?? 0,
-    time: new Date(item.started_at).toLocaleString("ja-JP", { hour12: false })
+    time: new Date(item.started_at).toLocaleString("ja-JP", { hour12: false }),
+    contentHash: item.content_hash
   }));
 
   // 差分情報を整形
@@ -242,6 +249,40 @@ export default async function UrlDetailPage({ params }: PageProps) {
               </div>
             </div>
           </div>
+
+          <div className="card">
+            <div className="section-title">
+              <h2>変更検知情報</h2>
+            </div>
+            <div style={{ display: "grid", gap: 12 }}>
+              <div className="panel">
+                <div className="mono" style={{ color: "var(--muted)", fontSize: 12, marginBottom: 4 }}>
+                  content_hash
+                </div>
+                <div className="mono" style={{ fontSize: 12, wordBreak: "break-all" }}>
+                  {target.contentHash || "-"}
+                </div>
+              </div>
+              <div className="panel">
+                <div className="mono" style={{ color: "var(--muted)", fontSize: 12, marginBottom: 4 }}>
+                  latest_item_id
+                </div>
+                <div className="mono" style={{ fontSize: 12, wordBreak: "break-all" }}>
+                  {target.latestItemId || "-"}
+                </div>
+              </div>
+              {target.latestItemPublishedAt && (
+                <div className="panel">
+                  <div className="mono" style={{ color: "var(--muted)", fontSize: 12, marginBottom: 4 }}>
+                    latest_item_published_at
+                  </div>
+                  <div style={{ fontSize: 13 }}>
+                    {target.latestItemPublishedAt}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
 
         <div className="card">
@@ -254,11 +295,27 @@ export default async function UrlDetailPage({ params }: PageProps) {
               {timeline.map((item) => (
                 <div key={item.id} className="timeline-item">
                   <StatusPill status={item.status} size="medium" />
-                  <div>
-                    <div style={{ fontWeight: 600 }}>{item.url}</div>
-                    <div style={{ color: "var(--muted)", fontSize: 12 }}>
-                      HTTP {item.http} ・ {item.time}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <span style={{ fontWeight: 600 }}>HTTP {item.http}</span>
+                      <span style={{ color: "var(--muted)", fontSize: 12 }}>{item.time}</span>
                     </div>
+                    {item.contentHash && (
+                      <div
+                        className="mono"
+                        style={{
+                          color: "var(--muted)",
+                          fontSize: 11,
+                          marginTop: 4,
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap"
+                        }}
+                        title={item.contentHash}
+                      >
+                        {item.contentHash}
+                      </div>
+                    )}
                   </div>
                   <a className="badge" href="#" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
                     <ExternalLink size={14} />

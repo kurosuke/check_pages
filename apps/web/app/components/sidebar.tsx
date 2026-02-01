@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Gauge, Globe2, Bell, Users, Settings, FolderPlus, ChevronDown, ChevronRight, Folder } from "lucide-react";
+import { Gauge, Settings, FolderPlus, ChevronDown, ChevronRight, Folder } from "lucide-react";
 import { useState, useEffect } from "react";
 import { CreateProjectModal } from "./create-project-modal";
 
@@ -18,7 +18,7 @@ export function Sidebar() {
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [projectsExpanded, setProjectsExpanded] = useState(true);
-  
+
   // Extract current project ID from pathname
   const currentProjectId = pathname.match(/\/projects\/([^/]+)/)?.[1];
 
@@ -46,12 +46,6 @@ export function Sidebar() {
     router.push(`/projects/${project.id}/urls`);
   };
 
-  const getProjectLinks = (projectId: string) => [
-    { href: `/projects/${projectId}/urls`, label: "URL一覧", icon: Globe2 },
-    { href: `/projects/${projectId}/settings`, label: "通知設定", icon: Bell },
-    { href: `/projects/${projectId}/members`, label: "メンバー", icon: Users },
-  ];
-
   return (
     <>
       <aside className="sidebar">
@@ -63,10 +57,10 @@ export function Sidebar() {
               ダッシュボード
             </span>
           </Link>
-          
+
           {/* Projects Section */}
           <div className="nav-section">
-            <button 
+            <button
               className="nav-section-header"
               onClick={() => setProjectsExpanded(!projectsExpanded)}
             >
@@ -76,7 +70,7 @@ export function Sidebar() {
               </span>
               <span className="project-count">{projects.length}</span>
             </button>
-            
+
             {projectsExpanded && (
               <div className="project-list">
                 {loading ? (
@@ -85,36 +79,19 @@ export function Sidebar() {
                   <div className="empty-text">プロジェクトがありません</div>
                 ) : (
                   projects.map((project) => (
-                    <div key={project.id} className="project-item">
-                      <Link
-                        href={`/projects/${project.id}/urls`}
-                        className={`project-name ${currentProjectId === project.id ? "active" : ""}`}
-                      >
-                        <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-                          <Folder size={14} />
-                          {project.name}
-                        </span>
-                      </Link>
-                      {currentProjectId === project.id && (
-                        <div className="project-subnav">
-                          {getProjectLinks(project.id).map((item) => {
-                            const Icon = item.icon;
-                            const active = pathname === item.href;
-                            return (
-                              <Link key={item.href} href={item.href} className={active ? "active" : ""}>
-                                <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-                                  <Icon size={14} />
-                                  {item.label}
-                                </span>
-                              </Link>
-                            );
-                          })}
-                        </div>
-                      )}
-                    </div>
+                    <Link
+                      key={project.id}
+                      href={`/projects/${project.id}/urls`}
+                      className={`project-name ${currentProjectId === project.id ? "active" : ""}`}
+                    >
+                      <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+                        <Folder size={14} />
+                        {project.name}
+                      </span>
+                    </Link>
                   ))
                 )}
-                
+
                 <button className="create-project-btn" onClick={() => setShowCreateModal(true)}>
                   <FolderPlus size={14} />
                   新規プロジェクト
@@ -123,7 +100,7 @@ export function Sidebar() {
             )}
           </div>
 
-          <Link href="/settings" className={pathname === "/settings" ? "active" : ""}>
+          <Link href="/settings" className={pathname === "/settings" || pathname.startsWith("/settings/") ? "active" : ""}>
             <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
               <Settings size={16} />
               全体設定
@@ -173,9 +150,6 @@ export function Sidebar() {
           padding-left: 0;
           margin-top: 8px;
         }
-        .project-item {
-          margin-bottom: 12px;
-        }
         .project-name {
           display: block;
           padding: 8px 12px;
@@ -188,39 +162,15 @@ export function Sidebar() {
           white-space: nowrap;
           overflow: hidden;
           text-overflow: ellipsis;
-          margin-bottom: 6px;
+          margin-bottom: 4px;
         }
         .project-name:hover {
           color: var(--text);
+          background: #f3f4f6;
         }
         .project-name.active {
           color: var(--primary);
-          font-weight: 600;
-        }
-        .project-subnav {
-          padding-left: 20px;
-          margin-left: 12px;
-          margin-top: 6px;
-          margin-bottom: 8px;
-          padding-top: 4px;
-          padding-bottom: 4px;
-        }
-        .project-subnav :global(a) {
-          display: block;
-          padding: 6px 12px;
-          color: #9ca3af;
-          text-decoration: none;
-          font-size: 12px;
-          font-weight: 400;
-          transition: all 0.2s;
-          border-radius: 6px;
-          margin-bottom: 2px;
-        }
-        .project-subnav :global(a:hover) {
-          color: var(--text);
-        }
-        .project-subnav :global(a.active) {
-          color: var(--primary);
+          background: #eff6ff;
           font-weight: 600;
         }
         .loading-text,

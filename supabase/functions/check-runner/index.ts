@@ -2,6 +2,44 @@
 // Periodic URL change detection for serialized content monitoring
 // Supports HTML scraping, RSS feeds, and Narou API
 // Designed for Supabase hosted Edge Functions (service version)
+//
+// ============================================================================
+// 変更検出ロジック概要
+// ============================================================================
+//
+// 【URL種別の自動判定】
+// 1. なろう小説 (ncode.syosetu.com) → Narou API を使用
+// 2. カクヨム (kakuyomu.jp/works) → RSSHub フィードを使用
+// 3. RSS/Feed URL (末尾が /rss, /feed, .rss) → RSS として処理
+// 4. その他 → HTML スクレイピング
+//
+// 【変更検出方法】
+// - Narou API: latest_item_id (ncode-話数) の比較
+// - RSS: 最新アイテムの guid/link/title の比較
+// - HTML: 正規化後のコンテンツの SHA-256 ハッシュ比較
+//
+// 【HTML正規化ロジック (normalizeHtml関数)】
+// 動的要素による誤検知を防ぐため、以下を除去してからハッシュ計算:
+//
+// 1. 除去するHTML要素:
+//    - <script>, <style>, <noscript> タグ
+//    - <ins> (Google AdSense), <iframe> (広告), <amp-ad>
+//    - HTMLコメント (<!-- -->)
+//    - 広告/トラッキング系の class/id を持つ要素
+//      (ad-, ads-, advert, sponsor, tracking, analytics, gtm-, ga-)
+//
+// 2. 除去するテキストパターン:
+//    - 日時: 2024年1月1日, 2024/01/01, 12:30
+//    - 相対時刻: 3分前, 1時間前, 2日前
+//    - カウンター: 1,234回, 12345PV, views
+//    - ランキング: 第1位, No.1, #1
+//    - セッションID: 32文字以上の16進数文字列
+//    - トラッキングパラメータ: utm_*, _ga, fbclid, gclid
+//    - キャッシュバスティング: ?v=12345, ?_=timestamp
+//
+// これにより、広告や時刻表示が変わっても「Changed」にならず、
+// 実際のコンテンツ更新（新しい話の追加など）のみを検出できる。
+// ============================================================================
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -157,24 +195,63 @@ async function fetchDueUrls(force = false): Promise<DueUrl[]> {
 }
 
 /**
- * Normalize HTML by removing script/style/noscript tags and collapsing whitespace.
+ * Normalize HTML by removing dynamic/volatile elements and collapsing whitespace.
+ * This helps reduce false positives from ads, timestamps, session tokens, etc.
  */
 function normalizeHtml(html: string): string {
-  let result = html
+  let result = html;
+
+  // 1. Remove script, style, noscript tags (existing)
+  result = result
     .replace(/<script[\s\S]*?<\/script>/gi, "")
     .replace(/<style[\s\S]*?<\/style>/gi, "")
     .replace(/<noscript[\s\S]*?<\/noscript>/gi, "");
 
+  // 2. Remove ad-related elements
+  result = result
+    .replace(/<ins[\s\S]*?<\/ins>/gi, "")  // Google AdSense
+    .replace(/<iframe[\s\S]*?<\/iframe>/gi, "")  // Ad iframes
+    .replace(/<amp-ad[\s\S]*?<\/amp-ad>/gi, "")  // AMP ads
+    .replace(/<!--[\s\S]*?-->/g, "");  // HTML comments (often contain tracking)
+
+  // 3. Remove elements with common ad/tracking class names or IDs
+  result = result
+    .replace(/<[^>]+(class|id)=["'][^"']*(ad-|ads-|advert|sponsor|tracking|analytics|gtm-|ga-)[^"']*["'][^>]*>[\s\S]*?<\/[^>]+>/gi, "")
+    .replace(/<div[^>]+data-ad[^>]*>[\s\S]*?<\/div>/gi, "");
+
+  // 4. Remove all HTML tags
   result = result.replace(/<[^>]+>/g, " ");
 
+  // 5. Decode HTML entities
   result = result
     .replace(/&nbsp;/g, " ")
     .replace(/&amp;/g, "&")
     .replace(/&lt;/g, "<")
     .replace(/&gt;/g, ">")
     .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'");
+    .replace(/&#39;/g, "'")
+    .replace(/&#\d+;/g, "");  // Remove numeric entities
 
+  // 6. Remove dynamic content patterns
+  result = result
+    // Japanese date/time patterns: 2024年1月1日, 2024/01/01, 01月01日 12:30
+    .replace(/\d{4}[年\/\-]\d{1,2}[月\/\-]\d{1,2}[日]?\s*\d{0,2}:?\d{0,2}/g, "")
+    // Time patterns: 12:30, 12:30:45
+    .replace(/\d{1,2}:\d{2}(:\d{2})?/g, "")
+    // Relative time: 3分前, 1時間前, 2日前
+    .replace(/\d+[分時日週月年]前/g, "")
+    // View/access counts: 1,234回, 12345PV, 1234views
+    .replace(/[\d,]+\s*(回|PV|views?|アクセス|閲覧)/gi, "")
+    // Ranking numbers that change: 第1位, 1位, No.1
+    .replace(/(第?\d+位|No\.\d+|#\d+)/gi, "")
+    // Session IDs and tokens (long alphanumeric strings)
+    .replace(/[a-f0-9]{32,}/gi, "")
+    // URL query parameters with session/tracking info
+    .replace(/[?&](sid|session|token|ref|utm_[^=]+|_ga|fbclid|gclid)=[^&\s]*/gi, "")
+    // Cache busting parameters: ?v=12345, ?_=timestamp
+    .replace(/[?&](_|v|ver|version|t|ts|timestamp)=\d+/gi, "");
+
+  // 7. Collapse whitespace
   return result.replace(/\s+/g, " ").trim();
 }
 

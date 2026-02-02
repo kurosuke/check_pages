@@ -89,24 +89,26 @@ export function CreateProjectModal({ isOpen, onClose, onSuccess }: CreateProject
         .modal-overlay {
           position: fixed;
           inset: 0;
-          background: rgba(0, 0, 0, 0.5);
+          background: rgba(0, 0, 0, 0.55);
           display: flex;
           align-items: center;
           justify-content: center;
           z-index: 1000;
           padding: 20px;
-          backdrop-filter: blur(2px);
+          backdrop-filter: blur(8px);
         }
         .modal-content {
-          background: #ffffff;
-          border-radius: 8px;
-          border: 1px solid var(--border);
+          background: linear-gradient(160deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.04));
+          border-radius: 16px;
+          border: 1px solid rgba(255, 255, 255, 0.18);
           width: 100%;
           max-width: 480px;
           max-height: 90vh;
           overflow-y: auto;
           padding: 28px;
-          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+          box-shadow: 0 18px 48px rgba(0, 0, 0, 0.45);
+          backdrop-filter: blur(18px);
+          -webkit-backdrop-filter: blur(18px);
         }
         .modal-header {
           display: flex;
@@ -114,7 +116,7 @@ export function CreateProjectModal({ isOpen, onClose, onSuccess }: CreateProject
           align-items: center;
           margin-bottom: 24px;
           padding-bottom: 16px;
-          border-bottom: 1px solid var(--border);
+          border-bottom: 1px solid rgba(255, 255, 255, 0.14);
         }
         .modal-header h2 {
           font-size: 20px;
@@ -127,12 +129,12 @@ export function CreateProjectModal({ isOpen, onClose, onSuccess }: CreateProject
           color: var(--muted);
           cursor: pointer;
           padding: 6px;
-          border-radius: 4px;
+          border-radius: 8px;
           transition: all 0.15s;
         }
         .icon-button:hover {
           color: var(--text);
-          background: #f3f4f6;
+          background: rgba(255, 255, 255, 0.08);
         }
         .form-group {
           margin-bottom: 20px;
@@ -146,9 +148,9 @@ export function CreateProjectModal({ isOpen, onClose, onSuccess }: CreateProject
         }
         .form-input {
           width: 100%;
-          background: #ffffff;
-          border: 1px solid var(--border);
-          border-radius: 4px;
+          background: rgba(255, 255, 255, 0.05);
+          border: 1px solid rgba(255, 255, 255, 0.18);
+          border-radius: 10px;
           padding: 10px 12px;
           color: var(--text);
           font-size: 14px;
@@ -156,11 +158,11 @@ export function CreateProjectModal({ isOpen, onClose, onSuccess }: CreateProject
         }
         .form-input:focus {
           outline: none;
-          border-color: var(--info);
-          box-shadow: 0 0 0 3px rgba(0, 113, 133, 0.1);
+          border-color: rgba(140, 240, 179, 0.5);
+          box-shadow: 0 0 0 3px rgba(140, 240, 179, 0.18);
         }
         .form-input:hover {
-          border-color: #8b9196;
+          border-color: rgba(255, 255, 255, 0.28);
         }
         .form-hint {
           margin-top: 8px;
@@ -169,11 +171,11 @@ export function CreateProjectModal({ isOpen, onClose, onSuccess }: CreateProject
           line-height: 1.5;
         }
         .error-message {
-          background: #fef2f2;
-          border: 1px solid #fca5a5;
+          background: rgba(248, 113, 113, 0.15);
+          border: 1px solid rgba(248, 113, 113, 0.5);
           color: var(--error);
           padding: 12px 14px;
-          border-radius: 4px;
+          border-radius: 10px;
           margin-bottom: 20px;
           font-size: 14px;
         }
@@ -183,7 +185,7 @@ export function CreateProjectModal({ isOpen, onClose, onSuccess }: CreateProject
           gap: 12px;
           margin-top: 28px;
           padding-top: 20px;
-          border-top: 1px solid var(--border);
+          border-top: 1px solid rgba(255, 255, 255, 0.14);
         }
       `}</style>
     </div>

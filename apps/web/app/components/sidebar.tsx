@@ -139,12 +139,13 @@ export function Sidebar() {
           color: var(--text);
         }
         .project-count {
-          background: #e5e7eb;
+          background: rgba(255, 255, 255, 0.08);
           color: var(--text);
           padding: 2px 7px;
           border-radius: 12px;
           font-size: 11px;
           font-weight: 600;
+          border: 1px solid var(--border);
         }
         .project-list {
           padding-left: 0;
@@ -153,7 +154,7 @@ export function Sidebar() {
         .project-name {
           display: block;
           padding: 8px 12px;
-          color: #6b7280;
+          color: var(--muted);
           text-decoration: none;
           border-radius: 6px;
           font-size: 13px;
@@ -163,14 +164,21 @@ export function Sidebar() {
           overflow: hidden;
           text-overflow: ellipsis;
           margin-bottom: 4px;
+          border: 1px solid transparent;
+          background: rgba(255, 255, 255, 0.02);
         }
         .project-name:hover {
           color: var(--text);
-          background: #f3f4f6;
+          background: rgba(255, 255, 255, 0.07);
+          border-color: rgba(255, 255, 255, 0.12);
         }
         .project-name.active {
-          color: var(--primary);
-          background: #eff6ff;
+          color: var(--text);
+          background: radial-gradient(circle at 20% 20%, rgba(140, 240, 179, 0.22), transparent 55%),
+            radial-gradient(circle at 80% 0%, rgba(86, 215, 255, 0.18), transparent 52%),
+            rgba(255, 255, 255, 0.06);
+          border-color: rgba(140, 240, 179, 0.35);
+          box-shadow: 0 12px 32px rgba(140, 240, 179, 0.3);
           font-weight: 600;
         }
         .loading-text,
@@ -186,19 +194,22 @@ export function Sidebar() {
           justify-content: center;
           gap: 8px;
           width: calc(100% - 24px);
-          margin: 12px 12px 8px 12px;
+          margin: 22px 12px 8px 12px;
           padding: 10px 12px;
-          background: #f0f9ff;
-          border: none;
-          border-radius: 6px;
-          color: var(--primary);
+          background: linear-gradient(135deg, rgba(140, 240, 179, 0.16), rgba(86, 215, 255, 0.16));
+          border: 1px solid var(--border);
+          border-radius: 10px;
+          color: var(--text);
           font-size: 12px;
-          font-weight: 500;
+          font-weight: 600;
           cursor: pointer;
-          transition: all 0.2s;
+          transition: all 0.25s;
+          box-shadow: 0 12px 28px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.15);
         }
         .create-project-btn:hover {
-          background: #e0f2fe;
+          transform: translateY(-1px);
+          background: linear-gradient(135deg, rgba(140, 240, 179, 0.2), rgba(86, 215, 255, 0.22));
+          box-shadow: 0 16px 34px rgba(0, 0, 0, 0.3);
         }
       `}</style>
     </>

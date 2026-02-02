@@ -324,6 +324,14 @@ async function runNarouApiCheck(row: DueUrl, feedInfo: FeedInfo): Promise<void> 
       console.log(`[check-runner] New episode detected! Old: ${row.latest_item_id}, New: ${latestItemId}`);
     }
 
+    // Parse the datetime string (JST format from Narou API)
+    let publishedAt: string | null = null;
+    if (latestUpdate) {
+      // Convert "YYYY-MM-DD HH:MM:SS" to ISO format (assuming JST)
+      const [datePart, timePart] = latestUpdate.split(' ');
+      publishedAt = `${datePart}T${timePart}+09:00`;
+    }
+
     // Insert check record
     const { error: insertErr } = await supabase.from("checks").insert({
       url_id: row.id,
@@ -333,17 +341,11 @@ async function runNarouApiCheck(row: DueUrl, feedInfo: FeedInfo): Promise<void> 
       http_status: httpStatus,
       response_ms: responseMs,
       content_hash: contentHash,
+      item_id: latestItemId,
+      item_published_at: publishedAt,
     });
     if (insertErr) {
       console.error(`[check-runner] Error inserting check:`, JSON.stringify(insertErr));
-    }
-
-    // Parse the datetime string (JST format from Narou API)
-    let publishedAt: string | null = null;
-    if (latestUpdate) {
-      // Convert "YYYY-MM-DD HH:MM:SS" to ISO format (assuming JST)
-      const [datePart, timePart] = latestUpdate.split(' ');
-      publishedAt = `${datePart}T${timePart}+09:00`;
     }
 
     // Update URL with latest item info
@@ -374,6 +376,8 @@ async function runNarouApiCheck(row: DueUrl, feedInfo: FeedInfo): Promise<void> 
       http_status: httpStatus,
       response_ms: responseMs,
       error_message: errorMessage,
+      item_id: null,
+      item_published_at: null,
     });
 
     await supabase
@@ -478,6 +482,8 @@ async function runRssCheck(row: DueUrl, feedInfo: FeedInfo): Promise<RssResult> 
       http_status: httpStatus,
       response_ms: responseMs,
       content_hash: contentHash,
+      item_id: latestItem.id,
+      item_published_at: latestItem.pubDate ? new Date(latestItem.pubDate).toISOString() : null,
     });
     if (insertErr) {
       console.error(`[check-runner] Error inserting check:`, JSON.stringify(insertErr));
@@ -513,6 +519,8 @@ async function runRssCheck(row: DueUrl, feedInfo: FeedInfo): Promise<RssResult> 
       http_status: httpStatus,
       response_ms: responseMs,
       error_message: errorMessage,
+      item_id: null,
+      item_published_at: null,
     });
 
     if (!fallbackToHtml) {
@@ -589,6 +597,8 @@ async function runHtmlCheck(row: DueUrl): Promise<void> {
       http_status: httpStatus,
       response_ms: responseMs,
       content_hash: contentHash,
+      item_id: null,
+      item_published_at: null,
     });
     if (insertErr) {
       console.error(`[check-runner] Error inserting check:`, JSON.stringify(insertErr));
@@ -607,6 +617,8 @@ async function runHtmlCheck(row: DueUrl): Promise<void> {
       http_status: httpStatus,
       response_ms: responseMs,
       error_message: errorMessage,
+      item_id: null,
+      item_published_at: null,
     });
   } finally {
     clearTimeout(timer);

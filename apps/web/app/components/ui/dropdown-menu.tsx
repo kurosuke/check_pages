@@ -65,7 +65,7 @@ export function DropdownMenu({ trigger, children, align = "right" }: DropdownMen
           border: none;
           cursor: pointer;
           padding: 6px;
-          border-radius: 4px;
+          border-radius: 8px;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -74,7 +74,7 @@ export function DropdownMenu({ trigger, children, align = "right" }: DropdownMen
         }
 
         .dropdown-trigger:hover {
-          background: #f3f4f6;
+          background: rgba(255, 255, 255, 0.08);
           color: var(--text);
         }
 
@@ -88,11 +88,13 @@ export function DropdownMenu({ trigger, children, align = "right" }: DropdownMen
           top: calc(100% + 4px);
           z-index: 100;
           min-width: 180px;
-          background: #ffffff;
-          border: 1px solid var(--border);
-          border-radius: 8px;
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+          background: linear-gradient(150deg, rgba(10, 10, 10, 0.8), rgba(30, 75, 30, 1));
+          border: 1px solid rgba(255, 255, 255, 0.16);
+          border-radius: 12px;
+          box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
           padding: 4px;
+          backdrop-filter: blur(16px);
+          -webkit-backdrop-filter: blur(16px);
           animation: dropdownFadeIn 0.15s ease;
         }
 
@@ -150,7 +152,7 @@ export function DropdownItem({ children, onClick, icon, danger, disabled }: Drop
           padding: 8px 12px;
           background: none;
           border: none;
-          border-radius: 4px;
+          border-radius: 8px;
           cursor: pointer;
           text-align: left;
           font-size: 14px;
@@ -159,7 +161,7 @@ export function DropdownItem({ children, onClick, icon, danger, disabled }: Drop
         }
 
         .dropdown-item:hover:not(:disabled) {
-          background: #f3f4f6;
+          background: rgba(255, 255, 255, 0.08);
         }
 
         .dropdown-item:disabled {
@@ -172,7 +174,7 @@ export function DropdownItem({ children, onClick, icon, danger, disabled }: Drop
         }
 
         .dropdown-item.danger:hover:not(:disabled) {
-          background: #fef2f2;
+          background: rgba(248, 113, 113, 0.18);
         }
 
         .dropdown-item-icon {

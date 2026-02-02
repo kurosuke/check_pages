@@ -28,6 +28,16 @@ interface UrlListClientProps {
   initialUrls: UrlRow[];
 }
 
+const parseUrlParts = (raw: string) => {
+  try {
+    const u = new URL(raw);
+    const path = `${u.pathname}${u.search}${u.hash}`;
+    return { domain: u.host, path: path === "/" ? "" : path };
+  } catch {
+    return { domain: raw, path: "" };
+  }
+};
+
 export function UrlListClient({ projectId, projectName, initialUrls }: UrlListClientProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -276,73 +286,28 @@ export function UrlListClient({ projectId, projectName, initialUrls }: UrlListCl
                       />
                     </td>
                     <td data-label="URL">
-                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                        <Link
-                          href={`/projects/${projectId}/urls/${row.id}`}
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 8,
-                            flex: 1,
-                            padding: "8px 12px",
-                            borderRadius: 8,
-                            background: "#f8fafc",
-                            border: "1px solid var(--border)",
-                            color: "var(--info)",
-                            textDecoration: "none",
-                            wordBreak: "break-all",
-                            fontWeight: 500,
-                            transition: "all 0.15s",
-                          }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.background = "#eff6ff";
-                            e.currentTarget.style.borderColor = "var(--info)";
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.background = "#f8fafc";
-                            e.currentTarget.style.borderColor = "var(--border)";
-                          }}
-                        >
-                          {row.url}
-                        </Link>
-                        <a
-                          href={row.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          aria-label={`${row.url} を開く`}
-                          title="URLを新しいタブで開く"
-                          style={{
-                            display: "inline-flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            width: 40,
-                            height: 40,
-                            borderRadius: 8,
-                            border: "1px solid var(--border)",
-                            background: "#fff",
-                            color: "var(--muted)",
-                            transition: "all 0.15s",
-                            flexShrink: 0,
-                          }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.background = "#f0f9ff";
-                            e.currentTarget.style.color = "var(--info)";
-                            e.currentTarget.style.borderColor = "var(--info)";
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.background = "#fff";
-                            e.currentTarget.style.color = "var(--muted)";
-                            e.currentTarget.style.borderColor = "var(--border)";
-                          }}
-                        >
-                          <ExternalLink size={18} />
-                        </a>
-                      </div>
-                      {row.note ? (
-                        <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 6, lineHeight: 1.4 }}>
-                          {row.note}
-                        </div>
-                      ) : null}
+                      {(() => {
+                        const parts = parseUrlParts(row.url);
+                        return (
+                          <div className="url-row">
+                            <Link href={`/projects/${projectId}/urls/${row.id}`} className="url-chip">
+                              <div className="url-chip__domain">{parts.domain}</div>
+                              {parts.path ? <div className="url-chip__path">{parts.path}</div> : null}
+                            </Link>
+                            <a
+                              href={row.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              aria-label={`${row.url} を開く`}
+                              title="URLを新しいタブで開く"
+                              className="url-open-btn"
+                            >
+                              <ExternalLink size={18} />
+                            </a>
+                          </div>
+                        );
+                      })()}
+                      {row.note ? <div className="url-note">{row.note}</div> : null}
                     </td>
                     <td data-label="最新話" className="mono">{row.latestEpisode ?? "-"}</td>
                     <td data-label="タグ" className="stack">
@@ -433,6 +398,93 @@ export function UrlListClient({ projectId, projectName, initialUrls }: UrlListCl
           urlText={moveModalUrl.url}
         />
       )}
+
+      <style jsx>{`
+        .url-row {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          background: var(--background-secondary);
+        }
+        .url-chip {
+          display: grid;
+          grid-template-columns: auto 1fr;
+          column-gap: 8px;
+          row-gap: 2px;
+          align-items: center;
+          padding: 10px 12px;
+          flex: 1;
+          border-radius: 10px;
+          border: 1px solid var(--border);
+          background: linear-gradient(135deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02));
+          text-decoration: none;
+          box-shadow: 0 10px 28px rgba(0, 0, 0, 0.25);
+          transition: transform 0.15s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+          min-width: 0;
+        }
+        .url-chip:hover {
+          transform: translateY(-1px);
+          box-shadow: 0 14px 36px rgba(0, 0, 0, 0.32);
+          border-color: rgba(140, 240, 179, 0.4);
+        }
+        .url-chip__domain {
+          color: var(--text);
+          font-weight: 600;
+          letter-spacing: -0.01em;
+          min-width: 0;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+        .url-chip__path {
+          color: var(--muted);
+          font-size: 12px;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          min-width: 0;
+        }
+        .url-open-btn {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          width: 42px;
+          height: 42px;
+          border-radius: 10px;
+          border: 1px solid var(--border);
+          background: rgba(255, 255, 255, 0.04);
+          color: var(--muted);
+          transition: all 0.18s ease;
+          flex-shrink: 0;
+          box-shadow: 0 10px 24px rgba(0, 0, 0, 0.2);
+        }
+        .url-open-btn:hover {
+          color: var(--text);
+          border-color: rgba(140, 240, 179, 0.4);
+          background: rgba(140, 240, 179, 0.08);
+          transform: translateY(-1px);
+        }
+        .url-note {
+          margin-top: 8px;
+          padding: 10px 12px;
+          font-size: 12px;
+          line-height: 1.5;
+          color: var(--text);
+          background: rgba(0, 0, 0, 0.45);
+          border: 1px solid rgba(255, 255, 255, 0.12);
+          border-radius: 10px;
+          box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+        }
+        @media (max-width: 720px) {
+          .url-row {
+            flex-direction: column;
+            align-items: stretch;
+          }
+          .url-open-btn {
+            width: 100%;
+          }
+        }
+      `}</style>
     </div>
   );
 }

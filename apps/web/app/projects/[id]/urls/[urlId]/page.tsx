@@ -1,7 +1,8 @@
 import { StatusPill } from "@/app/components/status-pill";
-import { Clock, RefreshCcw, ShieldCheck, ExternalLink } from "lucide-react";
+import { Clock } from "lucide-react";
 import { serviceClient } from "@/app/lib/supabase/service";
 import { notFound } from "next/navigation";
+import { ManualCheckButton } from "../manual-check-button";
 
 type PageProps = { params: Promise<{ id: string; urlId: string }> };
 
@@ -14,6 +15,8 @@ type Check = {
   final_url: string | null;
   ssl_expires_at: string | null;
   content_hash: string | null;
+  item_id?: string | null;
+  item_published_at?: string | null;
 };
 
 type Diff = {
@@ -48,7 +51,7 @@ async function fetchUrlDetail(projectId: string, urlId: string) {
   // チェック履歴を取得
   const { data: checksData } = await supabase
     .from("checks")
-    .select("id,status,http_status,response_ms,started_at,final_url,ssl_expires_at,content_hash")
+    .select("*")
     .eq("url_id", urlId)
     .order("started_at", { ascending: false })
     .limit(50);
@@ -98,10 +101,6 @@ export default async function UrlDetailPage({ params }: PageProps) {
     lastChecked: latestCheck?.started_at
       ? new Date(latestCheck.started_at).toLocaleString("ja-JP", { hour12: false })
       : "-",
-    ssl: latestCheck?.ssl_expires_at
-      ? new Date(latestCheck.ssl_expires_at).toISOString().slice(0, 10)
-      : "-",
-    redirect: latestCheck?.final_url ?? "-",
     response: latestCheck?.response_ms ? `${latestCheck.response_ms}ms` : "-",
     http: latestCheck?.http_status ?? 0,
     contentHash: latestCheck?.content_hash ?? null,
@@ -117,7 +116,11 @@ export default async function UrlDetailPage({ params }: PageProps) {
     url: target.url,
     http: item.http_status ?? 0,
     time: new Date(item.started_at).toLocaleString("ja-JP", { hour12: false }),
-    contentHash: item.content_hash
+    contentHash: item.content_hash,
+    itemId: item.item_id ?? null,
+    itemPublishedAt: item.item_published_at
+      ? new Date(item.item_published_at as string).toLocaleString("ja-JP", { hour12: false })
+      : null
   }));
 
   // 差分情報を整形
@@ -160,10 +163,7 @@ export default async function UrlDetailPage({ params }: PageProps) {
             <Clock size={16} />
             最終 {target.lastChecked}
           </button>
-          <button className="button">
-            <RefreshCcw size={16} />
-            手動チェック
-          </button>
+          <ManualCheckButton projectId={projectId} urlId={urlId} />
         </div>
       </header>
 
@@ -232,21 +232,6 @@ export default async function UrlDetailPage({ params }: PageProps) {
                 </div>
                 <div style={{ fontWeight: 600 }}>{target.response}</div>
               </div>
-              <div className="panel">
-                <div className="mono" style={{ color: "var(--muted)" }}>
-                  Redirect
-                </div>
-                <div className="mono">{target.redirect}</div>
-              </div>
-              <div className="panel" style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <ShieldCheck size={18} color="var(--success)" />
-                <div>
-                  <div className="mono" style={{ color: "var(--muted)" }}>
-                    SSL Exp.
-                  </div>
-                  <div>{target.ssl}</div>
-                </div>
-              </div>
             </div>
           </div>
 
@@ -296,11 +281,11 @@ export default async function UrlDetailPage({ params }: PageProps) {
                 <div key={item.id} className="timeline-item">
                   <StatusPill status={item.status} size="medium" />
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                      <span style={{ fontWeight: 600 }}>HTTP {item.http}</span>
-                      <span style={{ color: "var(--muted)", fontSize: 12 }}>{item.time}</span>
-                    </div>
-                    {item.contentHash && (
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <span style={{ fontWeight: 600 }}>HTTP {item.http}</span>
+                    <span style={{ color: "var(--muted)", fontSize: 12 }}>{item.time}</span>
+                  </div>
+                  {item.contentHash && (
                       <div
                         className="mono"
                         style={{
@@ -316,11 +301,15 @@ export default async function UrlDetailPage({ params }: PageProps) {
                         {item.contentHash}
                       </div>
                     )}
+                    <div style={{ marginTop: 6, display: "flex", gap: 10, flexWrap: "wrap" }}>
+                      <span className="tag" style={{ background: "rgba(255,255,255,0.05)", borderColor: "var(--border)" }}>
+                        item_id: {item.itemId ?? "-"}
+                      </span>
+                      <span className="tag" style={{ background: "rgba(255,255,255,0.05)", borderColor: "var(--border)" }}>
+                        item_published_at: {item.itemPublishedAt ?? "-"}
+                      </span>
+                    </div>
                   </div>
-                  <a className="badge" href="#" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-                    <ExternalLink size={14} />
-                    diff
-                  </a>
                 </div>
               ))}
             </div>

@@ -130,11 +130,12 @@ export function MoveUrlModal({
               <div
                 className="mono"
                 style={{
-                  padding: "8px 12px",
-                  background: "var(--background)",
-                  borderRadius: 6,
+                  padding: "10px 12px",
+                  background: "var(--panel)",
+                  borderRadius: 10,
                   fontSize: 13,
                   wordBreak: "break-all",
+                  border: "1px solid rgba(255, 255, 255, 0.18)"
                 }}
               >
                 {urlText}
@@ -168,10 +169,10 @@ export function MoveUrlModal({
                   style={{
                     width: "100%",
                     padding: "10px 12px",
-                    borderRadius: 6,
-                    border: "1px solid var(--border)",
-                    background: "var(--card)",
-                    color: "var(--foreground)",
+                    borderRadius: 10,
+                    border: "1px solid rgba(255, 255, 255, 0.18)",
+                    background: "rgba(255, 255, 255, 0.05)",
+                    color: "var(--text)",
                     fontSize: 14,
                   }}
                 >
@@ -209,24 +210,26 @@ export function MoveUrlModal({
         .modal-overlay {
           position: fixed;
           inset: 0;
-          background: rgba(0, 0, 0, 0.5);
+          background: rgba(0, 0, 0, 0.55);
           display: flex;
           align-items: center;
           justify-content: center;
           z-index: 1000;
           padding: 20px;
-          backdrop-filter: blur(2px);
+          backdrop-filter: blur(8px);
         }
         .modal {
-          background: #ffffff;
-          border-radius: 8px;
-          border: 1px solid var(--border);
+          background: linear-gradient(160deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.04));
+          border-radius: 16px;
+          border: 1px solid rgba(255, 255, 255, 0.18);
           width: 100%;
           max-width: 480px;
           max-height: 90vh;
           overflow-y: auto;
           padding: 28px;
-          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+          box-shadow: 0 18px 48px rgba(0, 0, 0, 0.45);
+          backdrop-filter: blur(18px);
+          -webkit-backdrop-filter: blur(18px);
         }
         .modal-header {
           display: flex;
@@ -234,7 +237,7 @@ export function MoveUrlModal({
           align-items: center;
           margin-bottom: 24px;
           padding-bottom: 16px;
-          border-bottom: 1px solid var(--border);
+          border-bottom: 1px solid rgba(255, 255, 255, 0.14);
         }
         .modal-header h2 {
           display: flex;
@@ -250,12 +253,12 @@ export function MoveUrlModal({
           color: var(--muted);
           cursor: pointer;
           padding: 6px;
-          border-radius: 4px;
+          border-radius: 8px;
           transition: all 0.15s;
         }
         .modal-close:hover {
           color: var(--text);
-          background: #f3f4f6;
+          background: rgba(255, 255, 255, 0.08);
         }
         .modal-body {
           margin-bottom: 24px;
@@ -278,7 +281,7 @@ export function MoveUrlModal({
           justify-content: flex-end;
           gap: 12px;
           padding-top: 20px;
-          border-top: 1px solid var(--border);
+          border-top: 1px solid rgba(255, 255, 255, 0.14);
         }
       `}</style>
     </div>

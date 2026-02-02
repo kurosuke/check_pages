@@ -10,7 +10,7 @@ function isValidUUID(id: string): boolean {
 
 // DELETE /api/projects/[id]/urls/[urlId] - Delete a URL
 export async function DELETE(
-  req: Request,
+  _req: Request,
   { params }: { params: { id: string; urlId: string } }
 ) {
   // Validate project ID and URL ID are valid UUIDs
